@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebSocket 客户端</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+
+    #messageList {
+      list-style-type: none;
+      position: absolute;
+      margin-top: 40px;
+      width: calc(100% - 80px);
+      height: calc(100% - 130px);
+      overflow: auto;
+      background-color: rgba(250, 250, 250, 1);
+      padding: 8px;
+    }
+
+    #messageList>li {
+      margin-bottom: 10px;
+      padding: 0px;
+      background-color: #f2f2f2;
+      border-radius: 8px;
+    }
+
+    #username {
+      position: absolute;
+      padding: 4px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin-right: 8px;
+    }
+
+    #login {
+      position: absolute;
+      padding: 4px;
+      left: 210px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+
+    #userNumTitle {
+      position: absolute;
+      padding: 4px;
+      left: 260px;
+    }
+
+    #userNum {
+      position: absolute;
+      padding: 4px;
+      left: 330px;
+      font-size: 22px;
+    }
+
+    #usersSelect {
+      position: absolute;
+      padding: 4px;
+      left: 380px;
+    }
+
+
+
+    #messageInput {
+      position: absolute;
+      bottom: 10px;
+      width: calc(100% - 200px);
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin-right: 8px;
+    }
+
+    #sendMessageButton {
+      position: absolute;
+      bottom: 10px;
+      right: 40px;
+      width: 100px;
+      padding: 8px 16px;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    #sendMessageButton:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+
+<body>
+  <input type="text" id="username" placeholder="用户名">
+  <button id="login">登录</button>
+  <select id="usersSelect">
+  </select>
+  <ul id="messageList"></ul>
+  <input type="text" id="messageInput" placeholder="请输入消息">
+  <button id="sendMessageButton">发送</button>
+  <span id="userNumTitle">在线人数:</span>
+  <span id="userNum">0</span>
+</body>
+<script>
+  let socket
+  function connect() {
+    //socket = new WebSocket('ws://172.16.5.21:3000');
+    socket = new WebSocket('ws://efp883.natappfree.cc');
+    // 监听连接成功事件
+    socket.addEventListener('open', (event) => {
+      console.log('Connected to server');
+      socket.send(JSON.stringify({ "user": username.value, "type": "login" }));
+    });
+
+    // 监听连接关闭事件
+    socket.addEventListener('close', (event) => {
+      console.log('Disconnected from server');
+    });
+
+    // 监听服务器发送的消息
+    socket.addEventListener('message', (event) => {
+      console.log(`Received from server: ${event.data}`);
+
+      let data = JSON.parse(event.data)
+      if (data.type === 'users') {//用户列表
+        clearSelect();
+        addData(data.users);
+      }
+      else if (data.type === 'sendToUser') {//其他用户消息
+        displayMessage(`${data.user}: ${data.msg}`);
+      } else {
+        displayMessage(`服务端: ${data}`);
+      }
+    });
+  }
+  //登录
+  let login = document.getElementById('login');
+  // 监听发送按钮点击事件
+  login.addEventListener('click', () => {
+    connect()
+    loginStatus = true
+  })
+  let loginStatus = false
+
+
+
+  // 获取按钮元素和输入框元素
+  const sendMessageButton = document.getElementById('sendMessageButton');
+  const messageInput = document.getElementById('messageInput');
+
+
+  //用户名
+  let username = document.getElementById('username');
+  //选择的用户
+  let usersSelect = document.getElementById('usersSelect');
+  //在线人数
+  let userNum = document.getElementById('userNum');
+
+  // 监听发送按钮点击事件
+  sendMessageButton.addEventListener('click', () => {
+    if (!loginStatus) {
+      alert('未登录')
+      return
+    }
+
+    console.log('发送')
+    const messageToSend = messageInput.value;
+    // 向服务器发送消息
+    socket.send(JSON.stringify({ "type": "sendToUser", "toUser": usersSelect.value, "user": username.value, "msg": messageToSend }));
+    displayMessage(`${username.value}: ${messageToSend}`);
+    // 清空输入框
+    messageInput.value = '';
+  });
+
+  // 在页面上显示消息
+  function displayMessage(message) {
+    const messageList = document.getElementById('messageList');
+    const li = document.createElement('li');
+    li.textContent = message;
+    messageList.appendChild(li);
+  }
+
+
+  // 清空下拉框中的所有选项  
+  function clearSelect() {
+    var select = document.getElementById('usersSelect');
+    while (select.firstChild) {
+      select.removeChild(select.firstChild);
+    }
+  }
+
+  // 添加数据到下拉框  
+  function addData(data) {
+    var select = document.getElementById('usersSelect');
+    for (var i = 0; i < data.length; i++) {
+      var option = document.createElement('option');
+      option.text = data[i];
+      option.value = data[i];
+      select.add(option);
+    }
+    //在线人数
+    userNum.textContent = data.length
+  }
+</script>
+
+</html>
