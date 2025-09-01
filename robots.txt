@@ -1,0 +1,4 @@
+User-agent:*
+Disallow:
+
+Sitemap: https://zzh630.top/sitemap.xml
