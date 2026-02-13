@@ -1,4 +1,4 @@
 User-agent:*
 Disallow:
 
-Sitemap: https://zzh630.top/sitemap.xml
+Sitemap: https://blog.zzh630.top/sitemap.xml
